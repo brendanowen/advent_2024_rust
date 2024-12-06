@@ -1,2 +1,2 @@
 [workspace]
-members = ["day01_part1", "day01_part2", "day02_part1", "day02_part2", "day03_part1"]
+members = ["day01_part1", "day01_part2", "day02_part1", "day02_part2", "day03_part1", "day03_part2"]
