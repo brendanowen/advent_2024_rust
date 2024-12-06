@@ -3,7 +3,7 @@ use std::io::{BufRead, BufReader};
 use std::collections::HashMap;
 
 fn main() -> Result<(), std::io::Error> {
-    let file = File::open("example.txt")?;
+    let file = File::open("grid.txt")?;
     let reader = BufReader::new(file);
 
     let char_to_num = HashMap::from([
