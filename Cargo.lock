@@ -70,6 +70,10 @@ name = "day07_part1"
 version = "0.1.0"
 
 [[package]]
+name = "day07_part2"
+version = "0.1.0"
+
+[[package]]
 name = "memchr"
 version = "2.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"

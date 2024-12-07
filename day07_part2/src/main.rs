@@ -2,6 +2,16 @@ use std::collections::HashSet;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
 
+fn round_power_10(num: i64) -> i64 {
+
+    let mut power_of_10 = 10;
+    while power_of_10 <= num {
+        power_of_10 *= 10;
+    }
+
+    power_of_10
+}
+
 fn main() {
     let file = File::open("calculations.txt").unwrap();
     let reader = BufReader::new(file);
@@ -27,6 +37,7 @@ fn main() {
 
             let mut next_values = HashSet::new();
             for previous in unique_values {
+                next_values.insert(previous*round_power_10(*next)+next);
                 next_values.insert(previous+next);
                 next_values.insert(previous*next);  
             }
@@ -40,5 +51,5 @@ fn main() {
         }
     }
 
-    println!("{}", total); // 6231007345478
+    println!("{}", total); // 6230999301795
 }
