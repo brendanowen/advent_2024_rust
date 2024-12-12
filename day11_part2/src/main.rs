@@ -32,7 +32,7 @@ fn main() {
         }
     }
 
-    for i in 0..75 {
+    for _ in 0..75 {
         let mut next_values: HashMap<usize, usize> = HashMap::new();
         value_counts.iter().for_each(|(value, count)| {
             let new_items = split_or_multiply(*value);
