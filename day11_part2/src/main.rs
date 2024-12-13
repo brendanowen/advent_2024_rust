@@ -28,7 +28,7 @@ fn main() {
         let line = line.unwrap();
         for num_str in line.split_whitespace() {
             let num = num_str.parse::<usize>().expect("Could not parse number");
-            *value_counts.entry(num).or_insert(0) += 1;
+            *(value_counts.entry(num).or_insert(0)) += 1;
         }
     }
 
@@ -37,7 +37,7 @@ fn main() {
         value_counts.iter().for_each(|(value, count)| {
             let new_items = split_or_multiply(*value);
             new_items.iter().for_each(|new_value| {
-                *next_values.entry(*new_value).or_insert(0) += count;
+                *(next_values.entry(*new_value).or_insert(0)) += count;
             });
         });
         value_counts = next_values;
