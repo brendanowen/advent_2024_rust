@@ -95,8 +95,8 @@ fn main() {
         });
 
     let mut total = 0;
-    for y in 0..width {
-        for x in 0..height {
+    for y in 0..height {
+        for x in 0..width {
             if grid[y][x] == 'O' {
                 total += 100 * y + x;
             }
