@@ -39,4 +39,4 @@ members = [
     "day19_part1", 
     "day19_part2"
       , "day20_part1"
-      , "day20_part2"]
+      , "day20_part2", "day21_part1"]
