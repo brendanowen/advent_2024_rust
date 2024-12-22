@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::{self, BufRead};
 use std::path::Path;
@@ -9,31 +10,44 @@ fn main() -> io::Result<()> {
     let lines = read_lines(file_path)?;
 
     // Create a Vec<Vec<char>> to store the characters of each line
-    let mut instructions: Vec<(Vec<char>, usize)> = Vec::new();
+    let mut instructions: Vec<(Vec<usize>, usize)> = Vec::new();
+
+    let digits: Vec<char> = vec!['A', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    let controls: Vec<char> = vec!['A', '^', '>', 'v', '<'];
+
+    // Create HashMaps for efficient lookup
+    let digits_map: HashMap<char, usize> =
+        digits.iter().enumerate().map(|(i, &c)| (c, i)).collect();
+    let controls_map: HashMap<char, usize> =
+        controls.iter().enumerate().map(|(i, &c)| (c, i)).collect();
 
     for line in lines {
         let line = line?; // Handle potential errors reading a line
         let char_vec: Vec<char> = line.chars().collect();
         match convert_to_numerical(&line) {
             Ok(value) => {
-                instructions.push((char_vec, value));
+                let indexes: Vec<usize> = char_vec
+                    .iter()
+                    .map(|character| *digits_map.get(&character).unwrap())
+                    .collect();
+                instructions.push((indexes, value));
             }
             Err(err) => eprintln!("Error converting line '{}': {}", line, err), // Handle errors
         }
     }
 
-    let digits: Vec<char> = vec!['A', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-    let controls: Vec<char> = vec!['A', '^', '>', 'v', '<'];
-
-    let path_controls: Vec<Vec<String>> = controls
+    let path_controls: Vec<Vec<Vec<usize>>> = controls
         .iter()
         .map(|first| {
             controls
                 .iter()
                 .map(|second| {
                     let best_path = find_best_robot_path(first, second);
-                    println!("{}{} => {}", first, second, best_path);
-                    best_path
+                    let index_list: Vec<usize> = best_path
+                        .chars()
+                        .map(|character| *controls_map.get(&character).unwrap())
+                        .collect();
+                    index_list
                 })
                 .collect()
         })
@@ -41,15 +55,18 @@ fn main() -> io::Result<()> {
 
     println!();
 
-    let path_digits: Vec<Vec<String>> = digits
+    let path_digits: Vec<Vec<Vec<usize>>> = digits
         .iter()
         .map(|first| {
             digits
                 .iter()
                 .map(|second| {
                     let best_path = find_best_digit_path(first, second);
-                    println!("{}{} => {}", first, second, best_path);
-                    best_path
+                    let index_list: Vec<usize> = best_path
+                        .chars()
+                        .map(|character| *controls_map.get(&character).unwrap())
+                        .collect();
+                    index_list
                 })
                 .collect()
         })
@@ -57,6 +74,42 @@ fn main() -> io::Result<()> {
 
     println!();
 
+    let mut total: usize = 0;
+    for instruction in instructions {
+        let mut last_digit: usize = 0;
+        let mut current_string: Vec<usize> = vec![];
+        for current_digit in instruction.0 {
+            let extra_string = path_digits[last_digit][current_digit].clone();
+            current_string.extend(extra_string);
+            last_digit = current_digit;
+        }
+
+        let mut counts: HashMap<(usize, usize), usize> = HashMap::new();
+
+        last_digit = 0;
+        for current_digit in current_string {
+            *counts.entry((last_digit, current_digit)).or_insert(0) += 1;
+            last_digit = current_digit;
+        }
+
+        for _ in 0..2 {
+            let mut next_counts: HashMap<(usize, usize), usize> = HashMap::new();
+            for ((first, second), count) in counts {
+                let extra_string = path_controls[first][second].clone();
+                last_digit = 0;
+                for current_digit in extra_string {
+                    *next_counts.entry((last_digit, current_digit)).or_insert(0) += count;
+                    last_digit = current_digit;
+                }
+            }
+            counts = next_counts;
+        }
+
+        let sub_total: usize = counts.iter().map(|((_, _), count)| *count).sum();
+        total += sub_total * instruction.1;
+    }
+
+    println!("{total}");
     Ok(())
 }
 
@@ -295,7 +348,7 @@ fn commands_numerical(last: char, char_value: char) -> Vec<String> {
             '1' => vec!["vv<<A", "<<vvA"],
             '2' => vec!["vv<A", "<vvA"],
             '3' => vec!["vvA"],
-            '4' => vec!["v<<A", "<<VA"],
+            '4' => vec!["v<<A", "<<vA"],
             '5' => vec!["v<A", "<vA"],
             '6' => vec!["vA"],
             '7' => vec!["<<A"],

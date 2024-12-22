@@ -253,7 +253,7 @@ fn commands_numerical(last: char, char_value: char) -> Vec<String> {
             '1' => vec!["vv<<A", "<<vvA"],
             '2' => vec!["vv<A", "<vvA"],
             '3' => vec!["vvA"],
-            '4' => vec!["v<<A", "<<VA"],
+            '4' => vec!["v<<A", "<<vA"],
             '5' => vec!["v<A", "<vA"],
             '6' => vec!["vA"],
             '7' => vec!["<<A"],
