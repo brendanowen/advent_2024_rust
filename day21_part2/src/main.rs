@@ -22,50 +22,82 @@ fn main() -> io::Result<()> {
         }
     }
 
-    instructions.iter().for_each(|instruction| {
-        //
-        let paths: Vec<Vec<char>> = create_path(&instruction.0, 2);
-        for path in paths {
-            let string: String = path.iter().collect();
-            println!("{}", string);
-        }
-        println!();
-    });
+    let digits: Vec<char> = vec!['A', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    let controls: Vec<char> = vec!['A', '^', '>', 'v', '<'];
+
+    let path_controls: Vec<Vec<String>> = controls
+        .iter()
+        .map(|first| {
+            controls
+                .iter()
+                .map(|second| {
+                    let best_path = find_best_robot_path(first, second);
+                    println!("{}{} => {}", first, second, best_path);
+                    best_path
+                })
+                .collect()
+        })
+        .collect();
+
+    println!();
+
+    let path_digits: Vec<Vec<String>> = digits
+        .iter()
+        .map(|first| {
+            digits
+                .iter()
+                .map(|second| {
+                    let best_path = find_best_digit_path(first, second);
+                    println!("{}{} => {}", first, second, best_path);
+                    best_path
+                })
+                .collect()
+        })
+        .collect();
+
+    println!();
 
     Ok(())
 }
 
-fn create_path(char_vec: &Vec<char>, numerical_robots: usize) -> Vec<Vec<char>> {
-    let mut paths: Vec<Vec<char>> = generate_numerical_paths(char_vec);
-
-    for _ in 0..numerical_robots {
-        let mut next_paths: Vec<Vec<char>> = vec![];
-        paths.iter().for_each(|current_path| {
-            let new_list = generate_direction_path(&current_path);
-            next_paths.extend(new_list);
+fn find_best_robot_path(first: &char, second: &char) -> String {
+    let paths1: Vec<String> = commands_robot(*first, *second);
+    let mut min_length = 100000000000;
+    let mut return_string: String = "".to_string();
+    paths1.iter().for_each(|path1| {
+        let paths2: Vec<String> = generate_direction_path(path1);
+        paths2.iter().for_each(|path2| {
+            let paths3: Vec<String> = generate_direction_path(path2);
+            for check in paths3 {
+                if check.len() < min_length {
+                    min_length = check.len();
+                    return_string = path1.clone();
+                }
+            }
         });
-        paths = next_paths;
-    }
-
-    let mut min_length = 1000000000000;
-    let mut min_path: Vec<&Vec<char>> = vec![];
-    paths.iter().for_each(|current_path| {
-        if current_path.len() < min_length {
-            min_length = current_path.len();
-            min_path = vec![];
-        }
-        if current_path.len() == min_length {
-            min_path.push(current_path);
-        }
     });
 
-    min_path
-        .iter()
-        .map(|&list| {
-            let return_list: Vec<char> = list.clone();
-            return_list
-        })
-        .collect()
+    return_string
+}
+
+fn find_best_digit_path(first: &char, second: &char) -> String {
+    let paths1: Vec<String> = commands_numerical(*first, *second);
+    let mut min_length = 100000000000;
+    let mut return_string: String = "".to_string();
+    paths1.iter().for_each(|path1| {
+        let paths2: Vec<String> = generate_direction_path(path1);
+        paths2.iter().for_each(|path2| {
+            let paths3: Vec<String> = generate_direction_path(path2);
+            for check in paths3 {
+                if check.len() < min_length {
+                    min_length = check.len();
+                    return_string = path1.clone();
+                }
+            }
+        });
+    });
+
+    return_string
 }
 
 fn commands_robot(last: char, char_value: char) -> Vec<String> {
@@ -276,45 +308,21 @@ fn commands_numerical(last: char, char_value: char) -> Vec<String> {
     new_string.iter().map(|string| string.to_string()).collect()
 }
 
-fn generate_numerical_paths(char_vec: &Vec<char>) -> Vec<Vec<char>> {
-    let mut return_path: Vec<Vec<char>> = vec![vec![]];
+fn generate_direction_path(char_vec: &String) -> Vec<String> {
+    let mut return_path: Vec<String> = vec!["".to_string()];
     let mut last: char = 'A';
-    char_vec.iter().for_each(|char_value| {
-        let new_strings: Vec<String> = commands_numerical(last, *char_value);
-        let mut next_paths: Vec<Vec<char>> = vec![];
+    char_vec.chars().for_each(|char_value| {
+        let new_strings: Vec<String> = commands_robot(last, char_value);
+        let mut next_paths: Vec<String> = vec![];
         return_path.iter().for_each(|base| {
             new_strings.iter().for_each(|extra| {
-                let new_sequence: Vec<char> = extra.chars().collect();
-                let mut final_sequence = base.clone();
-                final_sequence.extend(new_sequence);
+                let final_sequence = format!("{}{}", base, extra);
                 next_paths.push(final_sequence);
             });
         });
         return_path = next_paths;
 
-        last = *char_value
-    });
-
-    return_path
-}
-
-fn generate_direction_path(char_vec: &Vec<char>) -> Vec<Vec<char>> {
-    let mut return_path: Vec<Vec<char>> = vec![vec![]];
-    let mut last: char = 'A';
-    char_vec.iter().for_each(|char_value| {
-        let new_strings: Vec<String> = commands_robot(last, *char_value);
-        let mut next_paths: Vec<Vec<char>> = vec![];
-        return_path.iter().for_each(|base| {
-            new_strings.iter().for_each(|extra| {
-                let new_sequence: Vec<char> = extra.chars().collect();
-                let mut final_sequence = base.clone();
-                final_sequence.extend(new_sequence);
-                next_paths.push(final_sequence);
-            });
-        });
-        return_path = next_paths;
-
-        last = *char_value
+        last = char_value
     });
 
     return_path
