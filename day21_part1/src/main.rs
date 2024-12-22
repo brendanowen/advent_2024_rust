@@ -3,7 +3,7 @@ use std::io::{self, BufRead};
 use std::path::Path;
 
 fn main() -> io::Result<()> {
-    let file_path = "example.txt";
+    let file_path = "data.txt";
 
     // Read the file line by line
     let lines = read_lines(file_path)?;
@@ -27,7 +27,6 @@ fn main() -> io::Result<()> {
         .map(|instruction| {
             //
             let path_length = measure_length(&instruction.0, 2);
-            println!("{path_length}");
             instruction.1 * path_length
         })
         .sum();
@@ -37,241 +36,273 @@ fn main() -> io::Result<()> {
     Ok(())
 }
 
-fn print_chars(chars: &Vec<char>) {
-    chars.iter().for_each(|char_value| print!("{}", char_value));
-    println!();
-}
-
 fn measure_length(char_vec: &Vec<char>, numerical_robots: usize) -> usize {
-    print_chars(char_vec);
-    let mut path: Vec<char> = generate_numerical_path(char_vec);
-    print_chars(&path);
+    let mut paths: Vec<Vec<char>> = generate_numerical_paths(char_vec);
+
     for _ in 0..numerical_robots {
-        path = generate_direction_path(&path);
-        print_chars(&path);
+        let mut next_paths: Vec<Vec<char>> = vec![];
+        paths.iter().for_each(|current_path| {
+            let new_list = generate_direction_path(&current_path);
+            next_paths.extend(new_list);
+        });
+        paths = next_paths;
     }
 
-    path.len()
+    let mut min_length = paths[0].len();
+    paths.iter().for_each(|current_path| {
+        if current_path.len() < min_length {
+            min_length = current_path.len();
+        }
+    });
+
+    min_length
 }
 
-fn generate_numerical_path(char_vec: &Vec<char>) -> Vec<char> {
-    let mut return_path: Vec<char> = Vec::new();
+fn commands_robot(last: char, char_value: char) -> Vec<String> {
+    let new_string: Vec<&str> = match last {
+        'A' => match char_value {
+            'A' => vec!["A"],
+            '^' => vec!["<A"],
+            '<' => vec!["v<<A", "<v<A"],
+            'v' => vec!["v<A", "<vA"],
+            '>' => vec!["vA"],
+            _ => vec![""],
+        },
+        '^' => match char_value {
+            'A' => vec![">A"],
+            '^' => vec!["A"],
+            '<' => vec!["v<A"],
+            'v' => vec!["vA"],
+            '>' => vec![">vA", "v>A"],
+            _ => vec![""],
+        },
+        '<' => match char_value {
+            'A' => vec![">>^A", ">^>A"],
+            '^' => vec![">^A"],
+            '<' => vec!["A"],
+            'v' => vec![">A"],
+            '>' => vec![">>A"],
+            _ => vec![""],
+        },
+        'v' => match char_value {
+            'A' => vec![">^A", "^>A"],
+            '^' => vec!["^A"],
+            '<' => vec!["<A"],
+            'v' => vec!["A"],
+            '>' => vec![">A"],
+            _ => vec![""],
+        },
+        '>' => match char_value {
+            'A' => vec!["^A"],
+            '^' => vec!["^<A", "<^A"],
+            '<' => vec!["<<A"],
+            'v' => vec!["<A"],
+            '>' => vec!["A"],
+            _ => vec![""],
+        },
+        _ => vec![""],
+    };
+    new_string.iter().map(|string| string.to_string()).collect()
+}
+
+fn commands_numerical(last: char, char_value: char) -> Vec<String> {
+    let new_string: Vec<&str> = match last {
+        'A' => match char_value {
+            'A' => vec!["A"],
+            '0' => vec!["<A"],
+            '1' => vec!["^<<A", "<^<A"],
+            '2' => vec!["^<A", "<^A"],
+            '3' => vec!["^A"],
+            '4' => vec!["^^<<A", "^<<^A", "<^^<A"],
+            '5' => vec!["^^<A", "<^^A"],
+            '6' => vec!["^^A"],
+            '7' => vec!["^^^<<A", "<^^^<A", "^<<^^A", "^^<<^A"],
+            '8' => vec!["^^^<A", "<^^^A"],
+            '9' => vec!["^^^A"],
+            _ => vec![""],
+        },
+        '0' => match char_value {
+            'A' => vec![">A"],
+            '0' => vec!["A"],
+            '1' => vec!["^<A"],
+            '2' => vec!["^A"],
+            '3' => vec!["^>A", ">^A"],
+            '4' => vec!["^^<A", "^<^A"],
+            '5' => vec!["^^A"],
+            '6' => vec!["^^>A", ">^^A"],
+            '7' => vec!["^^^<A", "^^<^A", "^<^^A"],
+            '8' => vec!["^^^A"],
+            '9' => vec!["^^^>A", ">^^^A"],
+            _ => vec![""],
+        },
+        '1' => match char_value {
+            'A' => vec![">>vA", ">v>A"],
+            '0' => vec![">vA"],
+            '1' => vec!["A"],
+            '2' => vec![">A"],
+            '3' => vec![">>A"],
+            '4' => vec!["^A"],
+            '5' => vec!["^>A", ">^A"],
+            '6' => vec!["^>>A", ">>^A"],
+            '7' => vec!["^^A"],
+            '8' => vec!["^^>A", "^>^A", ">^^A"],
+            '9' => vec!["^^>>A", "^>^>A", ">>^^A", "^>>^A", ">^^>A", ">^>^A"],
+            _ => vec![""],
+        },
+        '2' => match char_value {
+            'A' => vec![">vA", "v>A"],
+            '0' => vec!["vA"],
+            '1' => vec!["<A"],
+            '2' => vec!["A"],
+            '3' => vec![">A"],
+            '4' => vec!["^<A", "<^A"],
+            '5' => vec!["^A"],
+            '6' => vec!["^>A", ">^A"],
+            '7' => vec!["^^<A", "^<^A", "<^^A"],
+            '8' => vec!["^^A"],
+            '9' => vec!["^^>A", "^>^A", ">^^A"],
+            _ => vec![""],
+        },
+        '3' => match char_value {
+            'A' => vec!["vA"],
+            '0' => vec!["v<A", "<vA"],
+            '1' => vec!["<<A"],
+            '2' => vec!["<A"],
+            '3' => vec!["A"],
+            '4' => vec!["^<<A", "<^<A", "<<^A"],
+            '5' => vec!["^<A", "<^A"],
+            '6' => vec!["^A"],
+            '7' => vec!["<<^^A", "<^<^A", "^<<^A", "<^^<A", "^^<<A", "^<^<^A"],
+            '8' => vec!["^^<A", "^<^A", "<^^A"],
+            '9' => vec!["^^A"],
+            _ => vec![""],
+        },
+        '4' => match char_value {
+            'A' => vec![">>vvA", ">v>vA", ">vv>A"],
+            '0' => vec![">vvA", "v>vA"],
+            '1' => vec!["vA"],
+            '2' => vec![">vA", "v>A"],
+            '3' => vec![">>vA", ">v>A", "v>>A"],
+            '4' => vec!["A"],
+            '5' => vec![">A"],
+            '6' => vec![">>A"],
+            '7' => vec!["^A"],
+            '8' => vec!["^>A", ">^A"],
+            '9' => vec!["^>>A", ">^>A", ">>^A"],
+            _ => vec![""],
+        },
+        '5' => match char_value {
+            'A' => vec![">vvA", "v>vA", "vv>A"],
+            '0' => vec!["vvA"],
+            '1' => vec!["v<A", "<vA"],
+            '2' => vec!["vA"],
+            '3' => vec![">vA", "v>A"],
+            '4' => vec!["<A"],
+            '5' => vec!["A"],
+            '6' => vec![">A"],
+            '7' => vec!["^<A", "<^A"],
+            '8' => vec!["^A"],
+            '9' => vec!["^>A", ">^A"],
+            _ => vec![""],
+        },
+        '6' => match char_value {
+            'A' => vec!["vvA"],
+            '0' => vec!["vv<A", "v<vA", "<vvA"],
+            '1' => vec!["v<<A", "<v<A", "<<vA"],
+            '2' => vec!["v<A", "<vA"],
+            '3' => vec!["vA"],
+            '4' => vec!["<<A"],
+            '5' => vec!["<A"],
+            '6' => vec!["A"],
+            '7' => vec!["^<<A", "<^<A", "<<^A"],
+            '8' => vec!["^<A", "<^A"],
+            '9' => vec!["^A"],
+            _ => vec![""],
+        },
+        '7' => match char_value {
+            'A' => vec![">>vvvA", ">vvv>A", ">vv>vA", ">v>vv", "vv>v>A", "vv>>vA"],
+            '0' => vec![">vvvA", "v>vvA", "vv>vA"],
+            '1' => vec!["vvA"],
+            '2' => vec![">vvA", "v>vA", "vv>A"],
+            '3' => vec![">>vvA", ">v>vA", ">vv>A", "v>>vA", "v>v>vA", "vv>>A"],
+            '4' => vec!["vA"],
+            '5' => vec!["v>A", ">vA"],
+            '6' => vec!["v>>A", ">v>A", ">>vA"],
+            '7' => vec!["A"],
+            '8' => vec![">A"],
+            '9' => vec![">>A"],
+            _ => vec![""],
+        },
+        '8' => match char_value {
+            'A' => vec![">vvvA", "v>vvA", "vv>vA", "vvv>A"],
+            '0' => vec!["vvvA"],
+            '1' => vec!["vv<A", "v<vA", "<vvA"],
+            '2' => vec!["vvA"],
+            '3' => vec![">vvA", "v>vA", "vv>A"],
+            '4' => vec!["v<A", "<vA"],
+            '5' => vec!["vA"],
+            '6' => vec![">vA", "v>A"],
+            '7' => vec!["<A"],
+            '8' => vec!["A"],
+            '9' => vec![">A"],
+            _ => vec![""],
+        },
+        '9' => match char_value {
+            'A' => vec!["vvvA"],
+            '0' => vec!["vvv<A", "vv<vA", "v<vvA", "<vvvA"],
+            '1' => vec!["vv<<A", "v<<vA", "v<v<A", "<vv<A", "<v<vA", "<<vvA"],
+            '2' => vec!["vv<A", "v<VA", "<vvA"],
+            '3' => vec!["vvA"],
+            '4' => vec!["v<<A", "<V<A", "<<VA"],
+            '5' => vec!["v<A", "<vA"],
+            '6' => vec!["vA"],
+            '7' => vec!["<<A"],
+            '8' => vec!["<A"],
+            '9' => vec!["A"],
+            _ => vec![""],
+        },
+        _ => vec![""],
+    };
+    new_string.iter().map(|string| string.to_string()).collect()
+}
+
+fn generate_numerical_paths(char_vec: &Vec<char>) -> Vec<Vec<char>> {
+    let mut return_path: Vec<Vec<char>> = vec![vec![]];
     let mut last: char = 'A';
     char_vec.iter().for_each(|char_value| {
-        let new_string: &str = match last {
-            'A' => match char_value {
-                'A' => "A",
-                '0' => "<A",
-                '1' => "^<<A",
-                '2' => "^<A",
-                '3' => "^A",
-                '4' => "^^<<A",
-                '5' => "^^<A",
-                '6' => "^^A",
-                '7' => "^^^<<A",
-                '8' => "^^^<A",
-                '9' => "^^^A",
-                _ => "",
-            },
-            '0' => match char_value {
-                'A' => ">A",
-                '0' => "A",
-                '1' => "^<A",
-                '2' => "^A",
-                '3' => "^>A",
-                '4' => "^^<A",
-                '5' => "^^A",
-                '6' => "^^>A",
-                '7' => "^^^<A",
-                '8' => "^^^A",
-                '9' => "^^^>A",
-                _ => "",
-            },
-            '1' => match char_value {
-                'A' => ">>vA",
-                '0' => ">vA",
-                '1' => "A",
-                '2' => ">A",
-                '3' => ">>A",
-                '4' => "^A",
-                '5' => "^>A",
-                '6' => "^>>A",
-                '7' => "^^A",
-                '8' => "^^>A",
-                '9' => "^^>>A",
-                _ => "",
-            },
-            '2' => match char_value {
-                'A' => ">vA",
-                '0' => "vA",
-                '1' => "<A",
-                '2' => "A",
-                '3' => ">A",
-                '4' => "^<A",
-                '5' => "^A",
-                '6' => "^>A",
-                '7' => "^^<A",
-                '8' => "^^A",
-                '9' => "^^>A",
-                _ => "",
-            },
-            '3' => match char_value {
-                'A' => "vA",
-                '0' => "v<A",
-                '1' => "<<A",
-                '2' => "<A",
-                '3' => "A",
-                '4' => "^<<A",
-                '5' => "^<A",
-                '6' => "^A",
-                '7' => "^^<<A",
-                '8' => "^^<A",
-                '9' => "^^A",
-                _ => "",
-            },
-            '4' => match char_value {
-                'A' => ">>vvA",
-                '0' => ">vvA",
-                '1' => "vA",
-                '2' => ">vA",
-                '3' => ">>vA",
-                '4' => "A",
-                '5' => ">A",
-                '6' => ">>A",
-                '7' => "^A",
-                '8' => "^>A",
-                '9' => "^>>A",
-                _ => "",
-            },
-            '5' => match char_value {
-                'A' => ">vvA",
-                '0' => "vvA",
-                '1' => "v<A",
-                '2' => "vA",
-                '3' => ">vA",
-                '4' => "<A",
-                '5' => "A",
-                '6' => ">A",
-                '7' => "^<A",
-                '8' => "^A",
-                '9' => "^>A",
-                _ => "",
-            },
-            '6' => match char_value {
-                'A' => "vvA",
-                '0' => "vv<A",
-                '1' => "v<<A",
-                '2' => "v<A",
-                '3' => "vA",
-                '4' => "<<A",
-                '5' => "<A",
-                '6' => "A",
-                '7' => "^<<A",
-                '8' => "^<A",
-                '9' => "^A",
-                _ => "",
-            },
-            '7' => match char_value {
-                'A' => ">>vvvA",
-                '0' => ">vvvA",
-                '1' => "vvA",
-                '2' => ">vvA",
-                '3' => ">>vvA",
-                '4' => "vA",
-                '5' => "v>A",
-                '6' => "v>>A",
-                '7' => "A",
-                '8' => ">A",
-                '9' => ">>A",
-                _ => "",
-            },
-            '8' => match char_value {
-                'A' => ">vvvA",
-                '0' => "vvvA",
-                '1' => "vv<A",
-                '2' => "vvA",
-                '3' => ">vvA",
-                '4' => "v<A",
-                '5' => "vA",
-                '6' => ">vA",
-                '7' => "<A",
-                '8' => "A",
-                '9' => ">A",
-                _ => "",
-            },
-            '9' => match char_value {
-                'A' => "vvvA",
-                '0' => "vvv<A",
-                '1' => "vv<<A",
-                '2' => "vv<A",
-                '3' => "vvA",
-                '4' => "v<<A",
-                '5' => "v<A",
-                '6' => "vA",
-                '7' => "<<A",
-                '8' => "<A",
-                '9' => "A",
-                _ => "",
-            },
-            _ => "",
-        };
-        let new_sequence: Vec<char> = new_string.chars().collect();
-        return_path.extend(new_sequence);
+        let new_strings: Vec<String> = commands_numerical(last, *char_value);
+        let mut next_paths: Vec<Vec<char>> = vec![];
+        return_path.iter().for_each(|base| {
+            new_strings.iter().for_each(|extra| {
+                let new_sequence: Vec<char> = extra.chars().collect();
+                let mut final_sequence = base.clone();
+                final_sequence.extend(new_sequence);
+                next_paths.push(final_sequence);
+            });
+        });
+        return_path = next_paths;
 
         last = *char_value
     });
 
     return_path
 }
-fn generate_direction_path(char_vec: &Vec<char>) -> Vec<char> {
-    let mut return_path: Vec<char> = Vec::new();
+
+fn generate_direction_path(char_vec: &Vec<char>) -> Vec<Vec<char>> {
+    let mut return_path: Vec<Vec<char>> = vec![vec![]];
     let mut last: char = 'A';
     char_vec.iter().for_each(|char_value| {
-        let new_string: &str = match last {
-            'A' => match char_value {
-                'A' => "A",
-                '^' => "<A",
-                '<' => "v<<A",
-                'v' => "v<A",
-                '>' => "vA",
-                _ => "",
-            },
-            '^' => match char_value {
-                'A' => ">A",
-                '^' => "A",
-                '<' => "v<A",
-                'v' => "vA",
-                '>' => ">vA",
-                _ => "",
-            },
-            '<' => match char_value {
-                'A' => ">>^A",
-                '^' => "^>A",
-                '<' => "A",
-                'v' => ">A",
-                '>' => ">>A",
-                _ => "",
-            },
-            'v' => match char_value {
-                'A' => ">^A",
-                '^' => "^A",
-                '<' => "<A",
-                'v' => "A",
-                '>' => ">A",
-                _ => "",
-            },
-            '>' => match char_value {
-                'A' => "^A",
-                '^' => "^<A",
-                '<' => "<<A",
-                'v' => "<A",
-                '>' => "A",
-                _ => "",
-            },
-            _ => "",
-        };
-        let new_sequence: Vec<char> = new_string.chars().collect();
-        return_path.extend(new_sequence);
+        let new_strings: Vec<String> = commands_robot(last, *char_value);
+        let mut next_paths: Vec<Vec<char>> = vec![];
+        return_path.iter().for_each(|base| {
+            new_strings.iter().for_each(|extra| {
+                let new_sequence: Vec<char> = extra.chars().collect();
+                let mut final_sequence = base.clone();
+                final_sequence.extend(new_sequence);
+                next_paths.push(final_sequence);
+            });
+        });
+        return_path = next_paths;
 
         last = *char_value
     });
