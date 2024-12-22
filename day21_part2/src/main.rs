@@ -3,7 +3,7 @@ use std::io::{self, BufRead};
 use std::path::Path;
 
 fn main() -> io::Result<()> {
-    let file_path = "/workspaces/advent_2024_rust/day21_part2/data.txt";
+    let file_path = "data.txt";
 
     // Read the file line by line
     let lines = read_lines(file_path)?;
@@ -22,53 +22,52 @@ fn main() -> io::Result<()> {
         }
     }
 
-    let total: usize = instructions
-        .iter()
-        .map(|instruction| {
-            //
-            let path_length = measure_length(&instruction.0, 2);
-            instruction.1 * path_length
-        })
-        .sum();
-
-    println!("{}", total);
+    instructions.iter().for_each(|instruction| {
+        //
+        let paths: Vec<Vec<char>> = create_path(&instruction.0, 2);
+        for path in paths {
+            let string: String = path.iter().collect();
+            println!("{}", string);
+        }
+        println!();
+    });
 
     Ok(())
 }
 
-fn measure_length(char_vec: &Vec<char>, numerical_robots: usize) -> usize {
+fn create_path(char_vec: &Vec<char>, numerical_robots: usize) -> Vec<Vec<char>> {
     let mut paths: Vec<Vec<char>> = generate_numerical_paths(char_vec);
 
     for _ in 0..numerical_robots {
-        let mut min_length = paths[0].len() * 10000;
         let mut next_paths: Vec<Vec<char>> = vec![];
         paths.iter().for_each(|current_path| {
             let new_list = generate_direction_path(&current_path);
-            let min_check = new_list
-                .iter()
-                .map(|check_list| {
-                    let new_list2 = generate_direction_path(&check_list);
-                    new_list2.iter().map(|list| list.len()).min().unwrap()
-                })
-                .min()
-                .unwrap();
-            if min_check < min_length {
-                next_paths = new_list;
-                min_length = min_check;
-            }
+            next_paths.extend(new_list);
         });
         paths = next_paths;
     }
 
-    let mut min_length = paths[0].len();
+    let mut min_length = 1000000000000;
+    let mut min_path: Vec<&Vec<char>> = vec![];
     paths.iter().for_each(|current_path| {
         if current_path.len() < min_length {
             min_length = current_path.len();
+            min_path = vec![];
+        }
+        if current_path.len() == min_length {
+            min_path.push(current_path);
         }
     });
 
-    min_length
+    min_path
+        .iter()
+        .map(|&list| {
+            let return_list: Vec<char> = list.clone();
+            return_list
+        })
+        .collect()
 }
+
 fn commands_robot(last: char, char_value: char) -> Vec<String> {
     let new_string: Vec<&str> = match last {
         'A' => match char_value {
