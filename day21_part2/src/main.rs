@@ -3,7 +3,7 @@ use std::io::{self, BufRead};
 use std::path::Path;
 
 fn main() -> io::Result<()> {
-    let file_path = "data.txt";
+    let file_path = "/workspaces/advent_2024_rust/day21_part2/data.txt";
 
     // Read the file line by line
     let lines = read_lines(file_path)?;
@@ -40,10 +40,22 @@ fn measure_length(char_vec: &Vec<char>, numerical_robots: usize) -> usize {
     let mut paths: Vec<Vec<char>> = generate_numerical_paths(char_vec);
 
     for _ in 0..numerical_robots {
+        let mut min_length = paths[0].len() * 10000;
         let mut next_paths: Vec<Vec<char>> = vec![];
         paths.iter().for_each(|current_path| {
             let new_list = generate_direction_path(&current_path);
-            next_paths.extend(new_list);
+            let min_check = new_list
+                .iter()
+                .map(|check_list| {
+                    let new_list2 = generate_direction_path(&check_list);
+                    new_list2.iter().map(|list| list.len()).min().unwrap()
+                })
+                .min()
+                .unwrap();
+            if min_check < min_length {
+                next_paths = new_list;
+                min_length = min_check;
+            }
         });
         paths = next_paths;
     }
@@ -57,7 +69,6 @@ fn measure_length(char_vec: &Vec<char>, numerical_robots: usize) -> usize {
 
     min_length
 }
-
 fn commands_robot(last: char, char_value: char) -> Vec<String> {
     let new_string: Vec<&str> = match last {
         'A' => match char_value {
