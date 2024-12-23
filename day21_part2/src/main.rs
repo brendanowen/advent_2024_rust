@@ -92,7 +92,7 @@ fn main() -> io::Result<()> {
             last_digit = current_digit;
         }
 
-        for _ in 0..2 {
+        for _ in 0..25 {
             let mut next_counts: HashMap<(usize, usize), usize> = HashMap::new();
             for ((first, second), count) in counts {
                 let extra_string = path_controls[first][second].clone();
@@ -121,12 +121,15 @@ fn find_best_robot_path(first: &char, second: &char) -> String {
         let paths2: Vec<String> = generate_direction_path(path1);
         paths2.iter().for_each(|path2| {
             let paths3: Vec<String> = generate_direction_path(path2);
-            for check in paths3 {
-                if check.len() < min_length {
-                    min_length = check.len();
-                    return_string = path1.clone();
+            paths3.iter().for_each(|path3| {
+                let paths4: Vec<String> = generate_direction_path(path3);
+                for check in paths4 {
+                    if check.len() < min_length {
+                        min_length = check.len();
+                        return_string = path1.clone();
+                    }
                 }
-            }
+            });
         });
     });
 
@@ -141,12 +144,15 @@ fn find_best_digit_path(first: &char, second: &char) -> String {
         let paths2: Vec<String> = generate_direction_path(path1);
         paths2.iter().for_each(|path2| {
             let paths3: Vec<String> = generate_direction_path(path2);
-            for check in paths3 {
-                if check.len() < min_length {
-                    min_length = check.len();
-                    return_string = path1.clone();
+            paths3.iter().for_each(|path3| {
+                let paths4: Vec<String> = generate_direction_path(path3);
+                for check in paths4 {
+                    if check.len() < min_length {
+                        min_length = check.len();
+                        return_string = path1.clone();
+                    }
                 }
-            }
+            });
         });
     });
 
