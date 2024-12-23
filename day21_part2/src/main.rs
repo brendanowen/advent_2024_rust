@@ -36,32 +36,16 @@ fn main() -> io::Result<()> {
         }
     }
 
-    let path_controls2: Vec<Vec<Vec<usize>>> = controls
-        .iter()
-        .map(|first| {
-            controls
-                .iter()
-                .map(|second| {
-                    let best_path = find_best_robot_path2(first, second);
-                    let index_list: Vec<usize> = best_path[0]
-                        .chars()
-                        .map(|character| *controls_map.get(&character).unwrap())
-                        .collect();
-                    index_list
-                })
-                .collect()
-        })
-        .collect();
-
-    println!();
     let path_controls3: Vec<Vec<Vec<usize>>> = controls
         .iter()
         .map(|first| {
             controls
                 .iter()
                 .map(|second| {
-                    let best_path = find_best_robot_path3(first, second);
-                    let index_list: Vec<usize> = best_path[0]
+                    let best_path = find_best_robot_path4(first, second);
+                    let index_list: Vec<usize> = best_path
+                        .last()
+                        .unwrap()
                         .chars()
                         .map(|character| *controls_map.get(&character).unwrap())
                         .collect();
@@ -71,18 +55,20 @@ fn main() -> io::Result<()> {
         })
         .collect();
 
-    println!();
-
-    let path_digits: Vec<Vec<Vec<usize>>> = digits
+    let path_digits: Vec<Vec<Vec<Vec<usize>>>> = digits
         .iter()
         .map(|first| {
             digits
                 .iter()
                 .map(|second| {
                     let best_path = find_best_digit_path4(first, second);
-                    let index_list: Vec<usize> = best_path[0]
-                        .chars()
-                        .map(|character| *controls_map.get(&character).unwrap())
+                    let index_list: Vec<Vec<usize>> = best_path
+                        .iter()
+                        .map(|temp| {
+                            temp.chars()
+                                .map(|character| *controls_map.get(&character).unwrap())
+                                .collect()
+                        })
                         .collect();
                     index_list
                 })
@@ -90,41 +76,55 @@ fn main() -> io::Result<()> {
         })
         .collect();
 
-    println!();
-
     let mut total: usize = 0;
     for instruction in instructions {
         let mut last_digit: usize = 0;
-        let mut current_string: Vec<usize> = vec![];
+        let mut current_strings: Vec<Vec<usize>> = vec![vec![]];
         for current_digit in instruction.0 {
-            let extra_string = path_digits[last_digit][current_digit].clone();
-            current_string.extend(extra_string);
-            last_digit = current_digit;
-        }
-
-        let mut counts: HashMap<(usize, usize), usize> = HashMap::new();
-
-        last_digit = 0;
-        for current_digit in current_string {
-            *counts.entry((last_digit, current_digit)).or_insert(0) += 1;
-            last_digit = current_digit;
-        }
-
-        for _ in 0..25 {
-            let mut next_counts: HashMap<(usize, usize), usize> = HashMap::new();
-            for ((first, second), count) in counts {
-                let extra_string = path_controls3[first][second].clone();
-                last_digit = 0;
-                for current_digit in extra_string {
-                    *next_counts.entry((last_digit, current_digit)).or_insert(0) += count;
-                    last_digit = current_digit;
+            let mut new_strings: Vec<Vec<usize>> = vec![];
+            let extra_strings = path_digits[last_digit][current_digit].clone();
+            for base_string in current_strings {
+                for extra_string in extra_strings.clone() {
+                    let mut current_string = base_string.clone();
+                    current_string.extend(extra_string);
+                    new_strings.push(current_string);
                 }
             }
-            counts = next_counts;
+            current_strings = new_strings;
+            last_digit = current_digit;
         }
 
-        let sub_total: usize = counts.iter().map(|((_, _), count)| *count).sum();
-        total += sub_total * instruction.1;
+        let mut min_value: usize = 300043033609508000;
+
+        for start_string in current_strings {
+            let mut counts: HashMap<(usize, usize), usize> = HashMap::new();
+
+            last_digit = 0;
+            for current_digit in start_string.clone() {
+                *counts.entry((last_digit, current_digit)).or_insert(0) += 1;
+                last_digit = current_digit;
+            }
+
+            for _ in 0..25 {
+                let mut next_counts: HashMap<(usize, usize), usize> = HashMap::new();
+                for ((first, second), count) in counts {
+                    let extra_string = path_controls3[first][second].clone();
+                    last_digit = 0;
+                    for current_digit in extra_string {
+                        *next_counts.entry((last_digit, current_digit)).or_insert(0) += count;
+                        last_digit = current_digit;
+                    }
+                }
+                counts = next_counts;
+            }
+
+            let sub_total: usize = counts.iter().map(|((_, _), count)| *count).sum();
+            if sub_total < min_value {
+                min_value = sub_total;
+            }
+        }
+
+        total += min_value * instruction.1;
     }
 
     println!("{total}");
@@ -157,8 +157,6 @@ fn find_best_robot_path4(first: &char, second: &char) -> Vec<String> {
         }
     });
 
-    println!("{} {} = {}", first, second, return_string.len());
-
     return_string
 }
 
@@ -188,111 +186,6 @@ fn find_best_digit_path4(first: &char, second: &char) -> Vec<String> {
         }
     });
 
-    println!("{} {} = {}", first, second, return_string.len());
-    return_string
-}
-
-fn find_best_robot_path3(first: &char, second: &char) -> Vec<String> {
-    let paths1: Vec<String> = commands_robot(*first, *second);
-    let mut min_length = 100000000000;
-    let mut return_string: Vec<String> = vec![];
-    paths1.iter().for_each(|path1| {
-        let paths2: Vec<String> = generate_direction_path(path1);
-        let mut current_min = 100000000000;
-        paths2.iter().for_each(|path2| {
-            let paths3: Vec<String> = generate_direction_path(path2);
-            for check in paths3 {
-                if check.len() < current_min {
-                    current_min = check.len();
-                }
-            }
-        });
-        if current_min < min_length {
-            min_length = current_min;
-            return_string = vec![path1.clone()];
-        } else if current_min == min_length {
-            return_string.push(path1.clone());
-        }
-    });
-
-    println!("{} {} = {}", first, second, return_string.len());
-
-    return_string
-}
-
-fn find_best_digit_path3(first: &char, second: &char) -> Vec<String> {
-    let paths1: Vec<String> = commands_numerical(*first, *second);
-    let mut min_length = 100000000000;
-    let mut return_string: Vec<String> = vec![];
-    paths1.iter().for_each(|path1| {
-        let paths2: Vec<String> = generate_direction_path(path1);
-        let mut current_min = 100000000000;
-        paths2.iter().for_each(|path2| {
-            let paths3: Vec<String> = generate_direction_path(path2);
-            for check in paths3 {
-                if check.len() < current_min {
-                    current_min = check.len();
-                }
-            }
-        });
-        if current_min < min_length {
-            min_length = current_min;
-            return_string = vec![path1.clone()];
-        } else if current_min == min_length {
-            return_string.push(path1.clone());
-        }
-    });
-
-    println!("{} {} = {}", first, second, return_string.len());
-    return_string
-}
-
-fn find_best_robot_path2(first: &char, second: &char) -> Vec<String> {
-    let paths1: Vec<String> = commands_robot(*first, *second);
-    let mut min_length = 100000000000;
-    let mut return_string: Vec<String> = vec![];
-    paths1.iter().for_each(|path1| {
-        let paths2: Vec<String> = generate_direction_path(path1);
-        let mut current_min = 100000000000;
-        for check in paths2 {
-            if check.len() < current_min {
-                current_min = check.len();
-            }
-        }
-        if current_min < min_length {
-            min_length = current_min;
-            return_string = vec![path1.clone()];
-        } else if current_min == min_length {
-            return_string.push(path1.clone());
-        }
-    });
-
-    println!("{} {} = {}", first, second, return_string.len());
-
-    return_string
-}
-
-fn find_best_digit_path2(first: &char, second: &char) -> Vec<String> {
-    let paths1: Vec<String> = commands_numerical(*first, *second);
-    let mut min_length = 100000000000;
-    let mut return_string: Vec<String> = vec![];
-    paths1.iter().for_each(|path1| {
-        let paths2: Vec<String> = generate_direction_path(path1);
-        let mut current_min = 100000000000;
-        for check in paths2 {
-            if check.len() < current_min {
-                current_min = check.len();
-            }
-        }
-        if current_min < min_length {
-            min_length = current_min;
-            return_string = vec![path1.clone()];
-        } else if current_min == min_length {
-            return_string.push(path1.clone());
-        }
-    });
-
-    println!("{} {} = {}", first, second, return_string.len());
     return_string
 }
 
