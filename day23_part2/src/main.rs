@@ -73,7 +73,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut options: Vec<Vec<usize>> = (0..total_computers).map(|value| vec![value]).collect();
 
-    for size in 1..total_computers {
+    for _ in 1..total_computers {
         let mut next_options: Vec<Vec<usize>> = vec![];
         for option in &options {
             let last = *option.last().unwrap();
